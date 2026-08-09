@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Middle Test Exam</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board: #1e3a34;
+    --board-2: #234840;
+    --chalk-white: #eef1ea;
+    --chalk-yellow: #e8d99a;
+    --chalk-pink: #e0a3a3;
+    --chalk-blue: #9fc9d3;
+    --frame: #6b4226;
+    --frame-dark: #4a2d18;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background: radial-gradient(ellipse at top, #2a2320 0%, #191412 70%);
+    font-family:'Inter',sans-serif;
+    color:var(--chalk-white);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  .frame{
+    width:100%;
+    max-width:720px;
+    background:
+      linear-gradient(var(--frame), var(--frame-dark));
+    border-radius:10px;
+    padding:14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,0,0.2);
+  }
+  .board{
+    position:relative;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.035), transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(255,255,255,0.03), transparent 45%),
+      var(--board);
+    border-radius:4px;
+    padding:36px 32px 28px;
+    overflow:hidden;
+  }
+  .board::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-blue);
+    font-size:14px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    opacity:0.85;
+    margin:0 0 4px;
+  }
+  h1{
+    font-family:'Caveat',cursive;
+    font-size:44px;
+    margin:0 0 18px;
+    color:var(--chalk-white);
+    text-shadow:0 0 12px rgba(255,255,255,0.08);
+  }
+  .progress-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:26px;
+  }
+  .progress-track{
+    flex:1;
+    height:8px;
+    background:rgba(255,255,255,0.1);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--chalk-yellow), var(--chalk-pink));
+    border-radius:4px;
+    transition:width 0.4s ease;
+    width:0%;
+  }
+  .progress-label{
+    font-family:'Kalam',cursive;
+    font-size:14px;
+    color:var(--chalk-white);
+    opacity:0.8;
+    white-space:nowrap;
+  }
+  .q-num{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-yellow);
+    font-size:15px;
+    margin-bottom:6px;
+  }
+  .question{
+    font-size:19px;
+    line-height:1.5;
+    margin:0 0 20px;
+    font-weight:500;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .option{
+    text-align:left;
+    background:rgba(255,255,255,0.04);
+    border:1.5px solid rgba(255,255,255,0.25);
+    border-radius:8px;
+    color:var(--chalk-white);
+    font-family:'Inter',sans-serif;
+    font-size:15.5px;
+    padding:13px 16px;
+    cursor:pointer;
+    transition:background 0.15s, border-color 0.15s, transform 0.1s;
+    position:relative;
+  }
+  .option:hover:not(.locked){
+    background:rgba(255,255,255,0.09);
+    border-color:rgba(255,255,255,0.5);
+  }
+  .option:active:not(.locked){ transform:scale(0.99); }
+  .option .letter{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-blue);
+    margin-right:8px;
+  }
+  .option.correct{
+    border-color:#8fd6b0;
+    background:rgba(143,214,176,0.16);
+  }
+  .option.correct .letter{ color:#8fd6b0; }
+  .option.incorrect{
+    border-color:var(--chalk-pink);
+    background:rgba(224,163,163,0.16);
+  }
+  .option.incorrect .letter{ color:var(--chalk-pink); }
+  .option.locked{ cursor:default; }
+  .option.selected{
+    border-color:var(--chalk-yellow);
+    background:rgba(232,217,154,0.14);
+  }
+  .option.selected .letter{ color:var(--chalk-yellow); }
+  .nav-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .back-btn{
+    font-family:'Kalam',cursive;
+    font-size:15px;
+    background:transparent;
+    color:var(--chalk-white);
+    border:1.5px solid rgba(255,255,255,0.35);
+    border-radius:6px;
+    padding:9px 18px;
+    cursor:pointer;
+    opacity:1;
+  }
+  .back-btn:hover{ background:rgba(255,255,255,0.08); }
+  .back-btn:disabled{ opacity:0.3; cursor:not-allowed; }
+  .feedback{
+    font-family:'Kalam',cursive;
+    font-size:15px;
+    min-height:24px;
+    margin-bottom:10px;
+    color:var(--chalk-yellow);
+  }
+  .next-btn{
+    font-family:'Kalam',cursive;
+    font-size:16px;
+    background:var(--chalk-yellow);
+    color:#2a2118;
+    border:none;
+    border-radius:6px;
+    padding:10px 22px;
+    cursor:pointer;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.2s;
+  }
+  .next-btn.visible{ opacity:1; pointer-events:auto; }
+  .next-btn:hover{ background:#f0e3ab; }
+
+  .summary{ text-align:center; }
+  .summary h2{
+    font-family:'Caveat',cursive;
+    font-size:52px;
+    margin:4px 0 6px;
+  }
+  .score-big{
+    font-family:'Kalam',cursive;
+    font-size:22px;
+    color:var(--chalk-yellow);
+    margin-bottom:6px;
+  }
+  .summary p.msg{
+    font-size:15px;
+    opacity:0.85;
+    margin-bottom:22px;
+  }
+  .review-list{
+    text-align:left;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    margin-bottom:24px;
+  }
+  .review-item{
+    font-size:14px;
+    padding:10px 14px;
+    border-radius:8px;
+    background:rgba(255,255,255,0.04);
+    border-left:3px solid var(--chalk-white);
+  }
+  .review-item.ok{ border-left-color:#8fd6b0; }
+  .review-item.bad{ border-left-color:var(--chalk-pink); }
+  .review-item .topic{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-blue);
+    font-size:12px;
+    display:block;
+    margin-bottom:2px;
+  }
+  .restart-btn{
+    font-family:'Kalam',cursive;
+    font-size:16px;
+    background:transparent;
+    color:var(--chalk-white);
+    border:1.5px solid rgba(255,255,255,0.4);
+    border-radius:6px;
+    padding:10px 22px;
+    cursor:pointer;
+  }
+  .restart-btn:hover{ background:rgba(255,255,255,0.08); }
+
+  .intro p.lead{
+    font-size:15px;
+    opacity:0.85;
+    margin:0 0 22px;
+    line-height:1.5;
+  }
+  .field{
+    margin-bottom:16px;
+  }
+  .field label{
+    display:block;
+    font-family:'Kalam',cursive;
+    color:var(--chalk-blue);
+    font-size:14px;
+    margin-bottom:6px;
+  }
+  .field input, .field select{
+    width:100%;
+    background:rgba(255,255,255,0.06);
+    border:1.5px solid rgba(255,255,255,0.3);
+    border-radius:8px;
+    color:var(--chalk-white);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    padding:11px 14px;
+  }
+  .field select{
+    appearance:none;
+    -webkit-appearance:none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--chalk-yellow) 50%), linear-gradient(135deg, var(--chalk-yellow) 50%, transparent 50%);
+    background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    cursor:pointer;
+  }
+  .field select option{
+    background:var(--board);
+    color:var(--chalk-white);
+  }
+  .field input:focus, .field select:focus{
+    outline:none;
+    border-color:var(--chalk-yellow);
+  }
+  .field input::placeholder{ color:rgba(238,241,234,0.4); }
+  .field input:disabled{
+    opacity:0.65;
+    cursor:not-allowed;
+    background:rgba(255,255,255,0.03);
+  }
+  .start-btn{
+    font-family:'Kalam',cursive;
+    font-size:17px;
+    background:var(--chalk-yellow);
+    color:#2a2118;
+    border:none;
+    border-radius:6px;
+    padding:11px 24px;
+    cursor:pointer;
+    margin-top:4px;
+  }
+  .start-btn:hover{ background:#f0e3ab; }
+  .start-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .field-error{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-pink);
+    font-size:13px;
+    min-height:18px;
+    margin-top:-8px;
+    margin-bottom:10px;
+  }
+  .roster-box{
+    margin-top:4px;
+    padding:14px 16px;
+    background:rgba(255,255,255,0.05);
+    border-radius:8px;
+    border:1px dashed rgba(255,255,255,0.25);
+  }
+  .roster-box .roster-title{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-blue);
+    font-size:13px;
+    margin-bottom:8px;
+  }
+  .roster-count{
+    font-family:'Caveat',cursive;
+    font-size:30px;
+    color:var(--chalk-yellow);
+    line-height:1;
+  }
+  .roster-sub{
+    font-size:13px;
+    opacity:0.75;
+    margin-top:4px;
+  }
+  .student-tag{
+    font-family:'Kalam',cursive;
+    font-size:14px;
+    color:var(--chalk-blue);
+    margin-bottom:4px;
+  }
+
+  .tester-link{
+    display:block;
+    text-align:center;
+    margin-top:18px;
+    font-family:'Kalam',cursive;
+    font-size:13px;
+    color:rgba(159,201,211,0.65);
+    background:none;
+    border:none;
+    cursor:pointer;
+    text-decoration:underline;
+    text-underline-offset:3px;
+  }
+  .tester-link:hover{ color:var(--chalk-blue); }
+
+  .dash-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .dash-stats{
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+  }
+  .stat{
+    background:rgba(255,255,255,0.05);
+    border-radius:8px;
+    padding:12px 18px;
+    min-width:110px;
+  }
+  .stat .num{
+    font-family:'Caveat',cursive;
+    font-size:32px;
+    color:var(--chalk-yellow);
+    line-height:1;
+  }
+  .stat .lbl{
+    font-size:12px;
+    opacity:0.75;
+    margin-top:4px;
+  }
+  .dash-actions{
+    display:flex;
+    gap:10px;
+  }
+  .table-wrap{
+    max-height:340px;
+    overflow-y:auto;
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:8px;
+    margin-bottom:18px;
+  }
+  table.roster-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
+  table.roster-table th{
+    position:sticky; top:0;
+    background:var(--board-2);
+    font-family:'Kalam',cursive;
+    color:var(--chalk-blue);
+    text-align:left;
+    padding:8px 12px;
+    font-weight:400;
+  }
+  table.roster-table td{
+    padding:8px 12px;
+    border-top:1px solid rgba(255,255,255,0.08);
+  }
+  table.roster-table tr:hover td{ background:rgba(255,255,255,0.03); }
+  .empty-note{
+    font-size:14px;
+    opacity:0.7;
+    text-align:center;
+    padding:30px 0;
+  }
+  .gate{
+    text-align:center;
+    padding:10px 0 6px;
+  }
+  .gate p.lead{
+    font-size:15px;
+    opacity:0.85;
+    margin:0 0 18px;
+  }
+  .gate .field{
+    max-width:220px;
+    margin:0 auto 6px;
+    text-align:left;
+  }
+  .gate-actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    margin-top:14px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .progress-fill{ transition:none; }
+  }
+  @media (max-width:480px){
+    h1{ font-size:34px; }
+    .board{ padding:26px 18px 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="board" id="board">
+    <div class="eyebrow">Exam Session</div>
+    <h1>Middle Test Exam</h1>
+    <div id="app"></div>
+  </div>
+</div>
+
+<script>
+// Change this to whatever code you want to share with yourself (the tester).
+const TESTER_CODE = "midterm2026";
+
+// Names pulled from the roster file, in list order.
+const NAME_ROSTER = [
+  "Abbas",
+  "Abd al-Uzza",
+  "Abdus Salam",
+  "Abd Manaf",
+  "Abd Rabbo",
+  "Abdel Fattah",
+  "Abdel Nour",
+  "Abdi",
+  "Abdolreza",
+  "Abdu",
+  "Abdul"
+];
+
+// Paste the Google Apps Script "Web app URL" here (ends in /exec).
+// See apps_script_backend.gs for setup instructions.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDBhMFynd_a5ZcFOJGO1CQEiT7QnSNaIvG3wBmanul4TGQ0p5rTeFamp0OYyP9pB42/exec";
+
+const QUESTIONS = [
+  {
+    topic: "Matrices",
+    q: "The eigenspace of A corresponding to eigenvalue λ is:",
+    options: ["The set consisting only of the eigenvectors found", "The null space (kernel) of (A − λI)", "The column space of A", "The row space of (A − λI)"],
+    correct: 1,
+    points: 1,
+    explain: "The eigenspace is {v : (A − λI)v = 0} = ker(A − λI), the null space of A − λI."
+  },
+  {
+    topic: "Multivariable Integration",
+    q: "In forming the double Riemann sum for ∬ᴿ f dA, the area of each subrectangle is:",
+    options: ["Δx + Δy", "Δx · Δy", "Δx / Δy", "(Δx)² + (Δy)²"],
+    correct: 1,
+    points: 1,
+    explain: "Each subrectangle has area Δx · Δy."
+  },
+  {
+    topic: "Multivariable Integration",
+    q: "The average value of f over a rectangle R is given by:",
+    options: ["∬ᴿ f dA", "(1/Area(R)) ∬ᴿ f dA", "Area(R) · ∬ᴿ f dA", "∬ᴿ f dA / f(x, y)"],
+    correct: 1,
+    points: 1,
+    explain: "Average value = (1/Area(R)) ∬ᴿ f dA."
+  },
+  {
+    topic: "Multivariable Integration",
+    q: "The volume of the solid under the constant surface z = c (with c > 0) over a rectangle R equals:",
+    options: ["c + Area(R)", "c · Area(R)", "c / Area(R)", "Area(R) / c"],
+    correct: 1,
+    points: 1,
+    explain: "Volume under a constant height c over R is c · Area(R) (a rectangular box)."
+  },
+  {
+    topic: "Multivariable Integration",
+    q: "Evaluate ∬ᴿ xy² dA for R = [0, 2] × [1, 3].",
+    options: ["26/3", "52/3", "26", "52"],
+    correct: 1,
+    points: 1,
+    explain: "∫₀² x dx = 2, ∫₁³ y² dy = 26/3, so the product is (2)(26/3) = 52/3."
+  },
+  {
+    topic: "Complex Numbers",
+    q: "The conjugate of z = 3 − 4i is:",
+    options: ["3 + 4i", "−3 + 4i", "−3 − 4i", "4 + 3i"],
+    correct: 2,
+    points: 1,
+    explain: "Conjugation flips only the sign of the imaginary part: a + bi → a − bi."
+  },
+  {
+    topic: "Complex Numbers",
+    q: "The modulus of z = −3 + 4i is:",
+    options: ["1", "5", "7", "25"],
+    correct: 1,
+    points: 1,
+    explain: "|z| = √((−3)² + 4²) = √25 = 5."
+  },
+  {
+    topic: "Complex Numbers",
+    q: "By Euler's formula, e^(iθ) equals:",
+    options: ["cos θ − i sin θ", "cos θ + i sin θ", "sin θ + i cos θ", "1 + iθ"],
+    correct: 1,
+    points: 1,
+    explain: "Euler's formula: e^(iθ) = cos θ + i sin θ."
+  },
+  {
+    topic: "Matrices",
+    q: "Two matrices A and B can be added if and only if:",
+    options: ["They have the same number of rows only", "They have the same order (same number of rows and same number of columns)", "They have the same determinant", "They are both square matrices"],
+    correct: 1,
+    points: 1,
+    explain: "Addition is entrywise, so both dimensions must match exactly."
+  },
+  {
+    topic: "Matrices",
+    q: "A square matrix A has an inverse if and only if:",
+    options: ["det(A) = 0", "det(A) ≠ 0", "A is symmetric", "A is triangular"],
+    correct: 1,
+    points: 1,
+    explain: "A nonzero determinant guarantees A is invertible (nonsingular)."
+  }
+];
+
+
+
+
+let current = 0;
+let started = false;
+const userAnswers = new Array(QUESTIONS.length).fill(null);
+let student = { name: "", cls: "" };
+
+function renderIntro(){
+  const app = document.getElementById('app');
+  const nameOptions = NAME_ROSTER.map((n, i) =>
+    `<option value="${n}">${i + 1}. ${n}</option>`
+  ).join('');
+  app.innerHTML = `
+    <div class="intro">
+      <p class="lead">Select your name and enter your class before starting the exam.</p>
+      <div class="field">
+        <label for="nameInput">Name</label>
+        <select id="nameInput">
+          <option value="" disabled selected>Select your name…</option>
+          ${nameOptions}
+        </select>
+      </div>
+      <div class="field">
+        <label for="classInput">Class</label>
+        <input type="text" id="classInput" value="أولى حاسبات أهلية" disabled autocomplete="off">
+      </div>
+      <div class="field-error" id="introError"></div>
+      <button class="start-btn" id="startBtn">Start the exam →</button>
+      <button class="tester-link" id="testerLink">Tester dashboard →</button>
+    </div>
+  `;
+  document.getElementById('startBtn').onclick = () => {
+    const nameVal = document.getElementById('nameInput').value.trim();
+    const classVal = document.getElementById('classInput').value.trim();
+    if(!nameVal || !classVal){
+      document.getElementById('introError').textContent = "Please select a name and enter your class.";
+      return;
+    }
+    student = { name: nameVal, cls: classVal };
+    started = true;
+    render();
+  };
+  document.getElementById('testerLink').onclick = () => {
+    renderCodeGate(app);
+  };
+}
+
+function renderCodeGate(app){
+  app.innerHTML = `
+    <div class="gate">
+      <div class="q-num">Tester dashboard</div>
+      <p class="lead">Enter the access code to view results.</p>
+      <div class="field">
+        <input type="password" id="codeInput" placeholder="Access code" autocomplete="off">
+      </div>
+      <div class="field-error" id="codeError"></div>
+      <div class="gate-actions">
+        <button class="restart-btn" id="cancelGateBtn">Cancel</button>
+        <button class="start-btn" id="submitCodeBtn">Unlock</button>
+      </div>
+    </div>
+  `;
+  const codeInput = document.getElementById('codeInput');
+  const tryUnlock = () => {
+    if(codeInput.value === TESTER_CODE){
+      renderDashboard(app);
+    }else{
+      document.getElementById('codeError').textContent = "Incorrect code. Try again.";
+      codeInput.value = "";
+      codeInput.focus();
+    }
+  };
+  document.getElementById('submitCodeBtn').onclick = tryUnlock;
+  codeInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') tryUnlock(); });
+  document.getElementById('cancelGateBtn').onclick = () => {
+    started = false;
+    render();
+  };
+  codeInput.focus();
+}
+
+function render(){
+  const app = document.getElementById('app');
+  if(!started){
+    renderIntro();
+    return;
+  }
+  if(current >= QUESTIONS.length){
+    renderSummary(app);
+    return;
+  }
+  const item = QUESTIONS[current];
+  const pct = Math.round((current / QUESTIONS.length) * 100);
+  const isLast = current === QUESTIONS.length - 1;
+
+  app.innerHTML = `
+    <div class="student-tag">${student.name} · ${student.cls}</div>
+    <div class="progress-row">
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="progress-label">${current + 1} / ${QUESTIONS.length}</div>
+    </div>
+    <div class="q-num">${item.topic}</div>
+    <p class="question">${item.q}</p>
+    <div class="options" id="options"></div>
+    <div class="nav-row">
+      <button class="back-btn" id="backBtnQ" ${current === 0 ? 'disabled' : ''}>← Back</button>
+      <button class="next-btn visible" id="nextBtn">${isLast ? 'Submit →' : 'Next →'}</button>
+    </div>
+  `;
+
+  const optionsDiv = document.getElementById('options');
+  const letters = ['A','B','C','D'];
+  item.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option' + (userAnswers[current] === idx ? ' selected' : '');
+    btn.innerHTML = `<span class="letter">${letters[idx]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(idx);
+    optionsDiv.appendChild(btn);
+  });
+
+  document.getElementById('backBtnQ').onclick = () => {
+    if(current > 0){ current--; render(); }
+  };
+  document.getElementById('nextBtn').onclick = () => {
+    current++;
+    render();
+  };
+}
+
+function selectAnswer(idx){
+  // Students can click any option, any number of times, and change their
+  // mind freely — the selection just updates which option is highlighted.
+  userAnswers[current] = idx;
+  const optionButtons = document.querySelectorAll('.option');
+  optionButtons.forEach((btn, i) => {
+    btn.classList.toggle('selected', i === idx);
+  });
+}
+
+async function saveSubmission(finalScore, finalTotal){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
+    console.error('APPS_SCRIPT_URL is not set — see apps_script_backend.gs for setup.');
+    return;
+  }
+  try{
+    const record = {
+      name: student.name,
+      cls: student.cls,
+      score: finalScore,
+      total: finalTotal,
+      timestamp: new Date().toISOString()
+    };
+    // Sent as text/plain to avoid a CORS preflight request, which Apps Script
+    // web apps don't handle by default. The script still parses it as JSON.
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(record)
+    });
+  }catch(err){
+    console.error('Could not save submission:', err);
+  }
+}
+
+async function fetchAllRecords(){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
+    console.error('APPS_SCRIPT_URL is not set — see apps_script_backend.gs for setup.');
+    return [];
+  }
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+    const records = await res.json();
+    // Sort by the student's position in the Name roster/dropdown (list order),
+    // not by submission time. Names not found in the roster sort to the end.
+    records.sort((a, b) => {
+      const ai = NAME_ROSTER.indexOf(a.name);
+      const bi = NAME_ROSTER.indexOf(b.name);
+      const aPos = ai === -1 ? NAME_ROSTER.length : ai;
+      const bPos = bi === -1 ? NAME_ROSTER.length : bi;
+      return aPos - bPos;
+    });
+    return records;
+  }catch(err){
+    console.error('Could not fetch records:', err);
+    return [];
+  }
+}
+
+async function clearAllResults(){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
+    console.error('APPS_SCRIPT_URL is not set — see apps_script_backend.gs for setup.');
+    return false;
+  }
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'clear', code: TESTER_CODE })
+    });
+    const data = await res.json();
+    return data && data.status === 'ok';
+  }catch(err){
+    console.error('Could not clear results:', err);
+    return false;
+  }
+}
+
+async function loadRoster(){
+  const records = await fetchAllRecords();
+  if(!records) return null;
+  const sameClassCount = records.filter(r =>
+    r.cls && r.cls.trim().toLowerCase() === student.cls.trim().toLowerCase()
+  ).length;
+  return { totalStudents: records.length, sameClassCount };
+}
+
+function downloadCSV(records){
+  const header = ['Name', 'Class', 'Score', 'Total', 'Percent', 'Timestamp'];
+  const rows = records.map(r => [
+    r.name, r.cls, r.score, r.total,
+    r.total ? Math.round((r.score / r.total) * 100) + '%' : '',
+    r.timestamp
+  ]);
+  const escapeCell = (val) => `"${String(val).replace(/"/g, '""')}"`;
+  const csv = [header, ...rows].map(row => row.map(escapeCell).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'middle_test_exam_results.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function renderDashboard(app){
+  app.innerHTML = `
+    <div class="q-num">Tester dashboard</div>
+    <p class="empty-note">Loading results…</p>
+  `;
+  const records = await fetchAllRecords();
+  const totalStudents = records.length;
+  const avgPct = totalStudents
+    ? Math.round(records.reduce((sum, r) => sum + (r.total ? r.score / r.total : 0), 0) / totalStudents * 100)
+    : 0;
+  const classSet = new Set(records.map(r => (r.cls || '').trim().toLowerCase()).filter(Boolean));
+
+  app.innerHTML = `
+    <div class="dash-header">
+      <div class="q-num" style="margin:0;">Tester dashboard</div>
+      <div class="dash-actions">
+        <button class="restart-btn" id="exportBtn">Export CSV</button>
+        <button class="restart-btn" id="clearBtn" style="border-color:var(--chalk-pink); color:var(--chalk-pink);">Clear all results</button>
+        <button class="restart-btn" id="backBtn">Back to quiz</button>
+      </div>
+    </div>
+    <div class="dash-stats">
+      <div class="stat"><div class="num">${totalStudents}</div><div class="lbl">students completed</div></div>
+      <div class="stat"><div class="num">${classSet.size}</div><div class="lbl">distinct classes</div></div>
+      <div class="stat"><div class="num">${avgPct}%</div><div class="lbl">average score</div></div>
+    </div>
+    <div id="tableArea"></div>
+  `;
+
+  const tableArea = document.getElementById('tableArea');
+  if(totalStudents === 0){
+    tableArea.innerHTML = `<div class="empty-note">No submissions yet. Share the quiz link to get started.</div>`;
+  }else{
+    const rowsHtml = records.map(r => {
+      const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
+      const when = r.timestamp ? new Date(r.timestamp).toLocaleString() : '';
+      return `<tr>
+        <td>${r.name || ''}</td>
+        <td>${r.cls || ''}</td>
+        <td>${r.score}/${r.total} (${pct}%)</td>
+        <td>${when}</td>
+      </tr>`;
+    }).join('');
+    tableArea.innerHTML = `
+      <div class="table-wrap">
+        <table class="roster-table">
+          <thead><tr><th>Name</th><th>Class</th><th>Score</th><th>Submitted</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  document.getElementById('exportBtn').onclick = () => downloadCSV(records);
+  document.getElementById('clearBtn').onclick = async () => {
+    if(totalStudents === 0){
+      return;
+    }
+    const confirmed = window.confirm(
+      `This will permanently delete all ${totalStudents} saved result${totalStudents === 1 ? '' : 's'}. This cannot be undone. Continue?`
+    );
+    if(!confirmed) return;
+    const clearBtn = document.getElementById('clearBtn');
+    clearBtn.disabled = true;
+    clearBtn.textContent = 'Clearing…';
+    const ok = await clearAllResults();
+    if(ok){
+      renderDashboard(app);
+    }else{
+      clearBtn.disabled = false;
+      clearBtn.textContent = 'Clear all results';
+      alert('Could not clear results — check the connection and try again.');
+    }
+  };
+  document.getElementById('backBtn').onclick = () => {
+    started = false;
+    render();
+  };
+}
+
+async function renderSummary(app){
+  const total = QUESTIONS.reduce((sum, item) => sum + (item.points || 1), 0);
+  const results = QUESTIONS.map((item, i) => ({
+    topic: item.topic,
+    q: item.q,
+    ok: userAnswers[i] === item.correct,
+    points: item.points || 1,
+    explain: item.explain
+  }));
+  const score = results.reduce((sum, r) => sum + (r.ok ? r.points : 0), 0);
+  const correctCount = results.filter(r => r.ok).length;
+
+  let msg;
+  if(score === total) msg = "Clean sweep — that board is spotless.";
+  else if(score >= total * 0.7) msg = "Solid work. A couple of spots to dust off.";
+  else msg = "Worth another pass before the real exam.";
+
+  app.innerHTML = `
+    <div class="summary">
+      <div class="student-tag" style="text-align:center">${student.name} · ${student.cls}</div>
+      <div class="q-num" style="text-align:center">Session complete</div>
+      <h2>Score: ${score} / ${total} points</h2>
+      <p class="msg">${correctCount} of ${QUESTIONS.length} questions correct · ${msg}</p>
+      <div class="roster-box" id="rosterBox">
+        <div class="roster-title">Class roster</div>
+        <div class="roster-count">Saving your result…</div>
+      </div>
+      <div class="review-list" id="reviewList" style="margin-top:20px;"></div>
+    </div>
+  `;
+  const list = document.getElementById('reviewList');
+  results.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'review-item ' + (r.ok ? 'ok' : 'bad');
+    const pointLabel = r.points === 1 ? '1 pt' : (r.points + ' pts');
+    div.innerHTML = `<span class="topic">${r.topic} · ${pointLabel}${r.ok ? ' · correct' : ' · missed'}</span>${r.q}`;
+    list.appendChild(div);
+  });
+
+  await saveSubmission(score, total);
+  const roster = await loadRoster();
+  const rosterBox = document.getElementById('rosterBox');
+  if(roster){
+    rosterBox.innerHTML = `
+      <div class="roster-title">Class roster</div>
+      <div class="roster-count">${roster.totalStudents} student${roster.totalStudents === 1 ? '' : 's'}</div>
+      <div class="roster-sub">have completed this quiz overall · ${roster.sameClassCount} from ${student.cls}</div>
+    `;
+  }else{
+    rosterBox.innerHTML = `
+      <div class="roster-title">Class roster</div>
+      <div class="roster-sub">Result saved, but the count couldn't be loaded right now.</div>
+    `;
+  }
+
+}
+
+render();
+</script>
+</body>
+</html>
