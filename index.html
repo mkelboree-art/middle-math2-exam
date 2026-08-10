@@ -581,8 +581,14 @@ const NAME_ROSTER = [
   "يوسف معبود عبدالبارى حسن محمد"
 ];
 
-// Updated Google Apps Script Web App URL
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAjQu3tUdRpSZf4e9KgVf0sMS8P6wNRyZjSswWPoW3vFr9CbeHaV2lxetAP_dGohnqVQ/exec";
+// Paste the Google Apps Script "Web app URL" here (ends in /exec).
+// See apps_script_backend.gs for setup instructions.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydq8bIipZi36nLHL5zPK_CJNEprMjbkkRvFvo-kIYg_-slWC7s3WY_fpn3Fi8yGKOU9g/exec";
+
+// Identifies which spreadsheet tab this exam's results are saved to
+// (matches the `sheet` field/param your Apps Script backend expects,
+// and equals DEFAULT_SHEET_NAME so existing rows stay where they are).
+const SHEET_NAME = "Responses";
 
 const QUESTIONS = [
   {
@@ -798,6 +804,8 @@ function render(){
 }
 
 function selectAnswer(idx){
+  // Students can click any option, any number of times, and change their
+  // mind freely — the selection just updates which option is highlighted.
   userAnswers[current] = idx;
   const optionButtons = document.querySelectorAll('.option');
   optionButtons.forEach((btn, i) => {
@@ -812,12 +820,15 @@ async function saveSubmission(finalScore, finalTotal){
   }
   try{
     const record = {
+      sheet: SHEET_NAME,
       name: student.name,
       cls: student.cls,
       score: finalScore,
       total: finalTotal,
       timestamp: new Date().toISOString()
     };
+    // Sent as text/plain to avoid a CORS preflight request, which Apps Script
+    // web apps don't handle by default. The script still parses it as JSON.
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -834,8 +845,10 @@ async function fetchAllRecords(){
     return [];
   }
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+    const res = await fetch(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME), { method: 'GET' });
     const records = await res.json();
+    // Sort by the student's position in the Name roster/dropdown (list order),
+    // not by submission time. Names not found in the roster sort to the end.
     records.sort((a, b) => {
       const ai = NAME_ROSTER.indexOf(a.name);
       const bi = NAME_ROSTER.indexOf(b.name);
@@ -859,7 +872,7 @@ async function clearAllResults(){
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'clear', code: TESTER_CODE })
+      body: JSON.stringify({ action: 'clear', code: TESTER_CODE, sheet: SHEET_NAME })
     });
     const data = await res.json();
     return data && data.status === 'ok';
