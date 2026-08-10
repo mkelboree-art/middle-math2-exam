@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Math Review — True or False</title>
+<title>True/False Exam</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Kalam:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -31,7 +31,8 @@
   .frame{
     width:100%;
     max-width:720px;
-    background: linear-gradient(var(--frame), var(--frame-dark));
+    background:
+      linear-gradient(var(--frame), var(--frame-dark));
     border-radius:10px;
     padding:14px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(0,0,0,0.2);
@@ -106,37 +107,54 @@
   .question{
     font-size:19px;
     line-height:1.5;
-    margin:0 0 22px;
+    margin:0 0 20px;
     font-weight:500;
   }
-  .tf-options{
+  .options{
     display:flex;
-    gap:14px;
+    flex-direction:column;
+    gap:10px;
     margin-bottom:18px;
   }
-  .tf-btn{
-    flex:1;
-    text-align:center;
+  .option{
+    text-align:left;
     background:rgba(255,255,255,0.04);
     border:1.5px solid rgba(255,255,255,0.25);
-    border-radius:10px;
+    border-radius:8px;
     color:var(--chalk-white);
-    font-family:'Kalam',cursive;
-    font-size:22px;
-    padding:22px 16px;
+    font-family:'Inter',sans-serif;
+    font-size:15.5px;
+    padding:13px 16px;
     cursor:pointer;
     transition:background 0.15s, border-color 0.15s, transform 0.1s;
+    position:relative;
   }
-  .tf-btn:hover{
+  .option:hover:not(.locked){
     background:rgba(255,255,255,0.09);
     border-color:rgba(255,255,255,0.5);
   }
-  .tf-btn:active{ transform:scale(0.98); }
-  .tf-btn.selected{
+  .option:active:not(.locked){ transform:scale(0.99); }
+  .option .letter{
+    font-family:'Kalam',cursive;
+    color:var(--chalk-blue);
+    margin-right:8px;
+  }
+  .option.correct{
+    border-color:#8fd6b0;
+    background:rgba(143,214,176,0.16);
+  }
+  .option.correct .letter{ color:#8fd6b0; }
+  .option.incorrect{
+    border-color:var(--chalk-pink);
+    background:rgba(224,163,163,0.16);
+  }
+  .option.incorrect .letter{ color:var(--chalk-pink); }
+  .option.locked{ cursor:default; }
+  .option.selected{
     border-color:var(--chalk-yellow);
     background:rgba(232,217,154,0.14);
-    color:var(--chalk-yellow);
   }
+  .option.selected .letter{ color:var(--chalk-yellow); }
   .nav-row{
     display:flex;
     justify-content:space-between;
@@ -151,9 +169,17 @@
     border-radius:6px;
     padding:9px 18px;
     cursor:pointer;
+    opacity:1;
   }
   .back-btn:hover{ background:rgba(255,255,255,0.08); }
   .back-btn:disabled{ opacity:0.3; cursor:not-allowed; }
+  .feedback{
+    font-family:'Kalam',cursive;
+    font-size:15px;
+    min-height:24px;
+    margin-bottom:10px;
+    color:var(--chalk-yellow);
+  }
   .next-btn{
     font-family:'Kalam',cursive;
     font-size:16px;
@@ -163,7 +189,11 @@
     border-radius:6px;
     padding:10px 22px;
     cursor:pointer;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.2s;
   }
+  .next-btn.visible{ opacity:1; pointer-events:auto; }
   .next-btn:hover{ background:#f0e3ab; }
 
   .summary{ text-align:center; }
@@ -171,6 +201,12 @@
     font-family:'Caveat',cursive;
     font-size:52px;
     margin:4px 0 6px;
+  }
+  .score-big{
+    font-family:'Kalam',cursive;
+    font-size:22px;
+    color:var(--chalk-yellow);
+    margin-bottom:6px;
   }
   .summary p.msg{
     font-size:15px;
@@ -218,7 +254,9 @@
     margin:0 0 22px;
     line-height:1.5;
   }
-  .field{ margin-bottom:16px; }
+  .field{
+    margin-bottom:16px;
+  }
   .field label{
     display:block;
     font-family:'Kalam',cursive;
@@ -226,7 +264,7 @@
     font-size:14px;
     margin-bottom:6px;
   }
-  .field input{
+  .field input, .field select{
     width:100%;
     background:rgba(255,255,255,0.06);
     border:1.5px solid rgba(255,255,255,0.3);
@@ -236,8 +274,29 @@
     font-size:15px;
     padding:11px 14px;
   }
-  .field input:focus{ outline:none; border-color:var(--chalk-yellow); }
+  .field select{
+    appearance:none;
+    -webkit-appearance:none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--chalk-yellow) 50%), linear-gradient(135deg, var(--chalk-yellow) 50%, transparent 50%);
+    background-position: calc(100% - 20px) center, calc(100% - 15px) center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+    cursor:pointer;
+  }
+  .field select option{
+    background:var(--board);
+    color:var(--chalk-white);
+  }
+  .field input:focus, .field select:focus{
+    outline:none;
+    border-color:var(--chalk-yellow);
+  }
   .field input::placeholder{ color:rgba(238,241,234,0.4); }
+  .field input:disabled{
+    opacity:0.65;
+    cursor:not-allowed;
+    background:rgba(255,255,255,0.03);
+  }
   .start-btn{
     font-family:'Kalam',cursive;
     font-size:17px;
@@ -250,6 +309,7 @@
     margin-top:4px;
   }
   .start-btn:hover{ background:#f0e3ab; }
+  .start-btn:disabled{ opacity:0.5; cursor:not-allowed; }
   .field-error{
     font-family:'Kalam',cursive;
     color:var(--chalk-pink);
@@ -288,6 +348,7 @@
     color:var(--chalk-blue);
     margin-bottom:4px;
   }
+
   .tester-link{
     display:block;
     text-align:center;
@@ -302,10 +363,7 @@
     text-underline-offset:3px;
   }
   .tester-link:hover{ color:var(--chalk-blue); }
-  .gate{ text-align:center; padding:10px 0 6px; }
-  .gate p.lead{ font-size:15px; opacity:0.85; margin:0 0 18px; }
-  .gate .field{ max-width:220px; margin:0 auto 6px; text-align:left; }
-  .gate-actions{ display:flex; gap:10px; justify-content:center; margin-top:14px; }
+
   .dash-header{
     display:flex;
     justify-content:space-between;
@@ -314,7 +372,12 @@
     margin-bottom:18px;
     flex-wrap:wrap;
   }
-  .dash-stats{ display:flex; gap:22px; flex-wrap:wrap; margin-bottom:20px; }
+  .dash-stats{
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+  }
   .stat{
     background:rgba(255,255,255,0.05);
     border-radius:8px;
@@ -327,8 +390,15 @@
     color:var(--chalk-yellow);
     line-height:1;
   }
-  .stat .lbl{ font-size:12px; opacity:0.75; margin-top:4px; }
-  .dash-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat .lbl{
+    font-size:12px;
+    opacity:0.75;
+    margin-top:4px;
+  }
+  .dash-actions{
+    display:flex;
+    gap:10px;
+  }
   .table-wrap{
     max-height:340px;
     overflow-y:auto;
@@ -336,7 +406,11 @@
     border-radius:8px;
     margin-bottom:18px;
   }
-  table.roster-table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.roster-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
   table.roster-table th{
     position:sticky; top:0;
     background:var(--board-2);
@@ -346,9 +420,37 @@
     padding:8px 12px;
     font-weight:400;
   }
-  table.roster-table td{ padding:8px 12px; border-top:1px solid rgba(255,255,255,0.08); }
+  table.roster-table td{
+    padding:8px 12px;
+    border-top:1px solid rgba(255,255,255,0.08);
+  }
   table.roster-table tr:hover td{ background:rgba(255,255,255,0.03); }
-  .empty-note{ font-size:14px; opacity:0.7; text-align:center; padding:30px 0; }
+  .empty-note{
+    font-size:14px;
+    opacity:0.7;
+    text-align:center;
+    padding:30px 0;
+  }
+  .gate{
+    text-align:center;
+    padding:10px 0 6px;
+  }
+  .gate p.lead{
+    font-size:15px;
+    opacity:0.85;
+    margin:0 0 18px;
+  }
+  .gate .field{
+    max-width:220px;
+    margin:0 auto 6px;
+    text-align:left;
+  }
+  .gate-actions{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    margin-top:14px;
+  }
 
   @media (prefers-reduced-motion: reduce){
     .progress-fill{ transition:none; }
@@ -356,15 +458,14 @@
   @media (max-width:480px){
     h1{ font-size:34px; }
     .board{ padding:26px 18px 22px; }
-    .tf-options{ flex-direction:column; }
   }
 </style>
 </head>
 <body>
 <div class="frame">
   <div class="board" id="board">
-    <div class="eyebrow">Review session</div>
-    <h1>True or False Check</h1>
+    <div class="eyebrow">Exam Session</div>
+    <h1>True/False Exam</h1>
     <div id="app"></div>
   </div>
 </div>
@@ -373,48 +474,202 @@
 // Change this to whatever code you want to share with yourself (the tester).
 const TESTER_CODE = "midterm2026";
 
-// Same Apps Script deployment as the multiple-choice quiz — this quiz just
-// writes to its own sheet tab so results never mix.
+// Names pulled from the roster file, in list order.
+const NAME_ROSTER = [
+  "ابراهيم عادل محمد مراد محمد",
+  "احمد حماده خلف عبدالرحيم محمد",
+  "احمد حماده محمد احمد",
+  "احمد حمام محمد محمود",
+  "احمد حمدى ابو الحسن احمد",
+  "احمد خالد احمد عايد",
+  "احمد سامح رشاد احمد",
+  "احمد سعيد سعد سعيد",
+  "احمد عادل حسن محمد",
+  "احمد عبدالرحيم عبدالراضى عبدالرحيم",
+  "احمد عرفه احمد الصغير عبدالرحيم",
+  "احمد محمد السايح محمد حسن",
+  "ادهم محمد معوض محمد",
+  "اروى احمد سلامه عثمان محمد",
+  "اريج عنتر علي ابوزيد",
+  "اسراء عبدالناصر جيلانى على طه",
+  "اسلام محمد محمد بريقع",
+  "اسلام منتصر نورالدين امين مرسي",
+  "البخارى محمد قمارى عثمان",
+  "الراوي عاطف الراوي ابراهيم",
+  "ايمان سيد عبدالجليل احمد محمد",
+  "برسوم وهيب ملقى مرقص مشرقى",
+  "جرجس فتحى روفائيل بشاره",
+  "جمال يوسف ابو الفتوح ابو المجد",
+  "حافظ عبدالحليم حافظ عبدالمريد",
+  "حبيبه الله احمد فتحى محمد",
+  "حسام عبدالباسط عابدين محمد",
+  "حسن مطاوع عبدالنعيم حسن",
+  "خالد مصطفي محمد مصطفي",
+  "خلود خالد حمدى حسن",
+  "خلود عبدالهادى عطيتو محمد",
+  "رهف احمد خليل عبدالرحيم",
+  "رهف اشرف على محمد محمود",
+  "رودينه علاء احمد بديع",
+  "ريمون لويس قرقار صدراك",
+  "زياد حماده رجب بدوى",
+  "زياد عبدالرحيم مغربى محمود عثمان",
+  "زياد محمد حسان سليمان",
+  "زياد محمد فوزي البناوي",
+  "سارة محمود رشدي محمود",
+  "سمير حمدي عبدالسلام محمد",
+  "سميه محمد نصر احمد سيد",
+  "شهد ابراهيم عبدالرحمن ابراهيم",
+  "شهد عصام عبدالسلام عطا علي",
+  "ضياء ربيع عبدالستار ابوالمجد محمد",
+  "طارق دسوقى محمد محمد ابراهيم",
+  "عبد الراضي عمر قط عبد الراضي",
+  "عبدالرحمن احمد على احمد",
+  "عبدالرحمن حسن محمد الملقب صلاح الدين",
+  "عبدالرحمن خالد عباس محمد",
+  "عبدالله ابوالمعارف عبدالرحيم اسماعيل حسين",
+  "عبدالله احمد عبدالفتاح عبدالسلام",
+  "عبدالله عادل ابراهيم عبدالرحمن عبدالحميد",
+  "عبدالله عادل جلال محمد حسن",
+  "عبدالله محمود يونس محمد احمد",
+  "عبدالملك اسامه سيف الدين مغربي",
+  "على محمد على احمد ابراهيم",
+  "على محمد على مصطفى على",
+  "عمر حمدي علي احمد",
+  "عمر علاء محمد احمد",
+  "عمر عماد الدين عبد الفتاح فرغلي",
+  "عمر مصطفى احمد مصطفى اسماعيل",
+  "عمرو علي لحظي محمد يونس",
+  "عمرو محمد احمد محمد حسن",
+  "فاطمه عبد الحميد ابو القاسم احمد مهران",
+  "فاطمه محمد كامل احمد",
+  "كريم عبده يونس مصطفي خليل",
+  "كريم محمد عدلى فراج حسين",
+  "كمال تمام كمال محمد تمام",
+  "كيرلس بهيج وهيب سلامه عبدالنور",
+  "محمد احمد محمود احمد اسماعيل الخطيب",
+  "محمد الامين احمد عبدالله محمد",
+  "محمد ايمن محمد السمان",
+  "محمد حماده عباس ابراهيم",
+  "محمد قرشي يسري سعدي",
+  "محمد متولى حسانى عبدالمولى",
+  "محمد مصطفى عبدالرحيم الضوى",
+  "محمد نصر محمد مصطفى",
+  "محمود احمد محمد محمود على",
+  "محمود ثروت محمد عبدالله حسن",
+  "محمود عدلى مصطفى احمد رضوان",
+  "مروان جبريل عبدالشكور احمد محمدين",
+  "مروان علي ابراهيم حسين",
+  "مريم هاني يوسف زكى",
+  "معاذ احمد بعيزق احمد جوده",
+  "مكاريوس مايكل لطفي نصيف حناالله",
+  "منة منتصر احمد حسن",
+  "مينا الهامى عبده رزق",
+  "مينا نعيم سعيد ابراهيم عبده",
+  "مينا نعيم مهني ابراهيم",
+  "نورهان هلالى فتحى ابوالمجد ابراهيم",
+  "هنا احمد فاروق محمود على",
+  "يس فيصل السائح ابراهيم",
+  "يوسف احمد محمد مرسى",
+  "يوسف احمد مصطفي ابراهيم",
+  "يوسف بركات احمد سليمان محمد",
+  "يوسف سيد احمد شاذلي محمد",
+  "يوسف مجدي عبدالفضيل احمد",
+  "يوسف محمد اشرف محمد",
+  "يوسف محمد فتحى نظير",
+  "يوسف محمد محمد عبدالله",
+  "يوسف مصطفي حميد حسن حامد",
+  "يوسف معبود عبدالبارى حسن محمد"
+];
+
+// Paste the Google Apps Script "Web app URL" here (ends in /exec).
+// See apps_script_backend.gs for setup instructions.
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOfGmS7q-drdCiArdemqnR6TLv5CkkpUnScH5Bo3h_1dAbCFdhzmF8hMobbnywmx4wIw/exec";
-const QUIZ_SHEET_NAME = "TrueFalseResponses";
 
 const QUESTIONS = [
   {
     topic: "Complex Numbers",
-    q: "If z is purely imaginary, then its conjugate z̄ equals −z.",
-    correct: true,
-    points: 1,
-    explain: "If z = bi, then z̄ = −bi = −z — true."
+    q: "Conjugate of a real number is itself.",
+    options: ["True", "False"],
+    correct: 0,
+    points: 2.5,
+    explain: "A real number a has conjugate a − 0i = a, so it equals itself."
   },
   {
     topic: "Complex Numbers",
-    q: "The argument of a nonzero complex number is always unique.",
-    correct: false,
-    points: 1,
-    explain: "The argument is determined only up to multiples of 2π; only the principal argument (usually in (−π, π]) is unique."
+    q: "Multiplicative inverse of 0 exists.",
+    options: ["True", "False"],
+    correct: 1,
+    points: 2.5,
+    explain: "0 has no multiplicative inverse, since no z satisfies 0 · z = 1."
+  },
+  {
+    topic: "Complex Numbers",
+    q: "Argument of nonzero z is always unique.",
+    options: ["True", "False"],
+    correct: 1,
+    points: 2.5,
+    explain: "The argument is only unique up to adding multiples of 2π; the principal argument is the unique one restricted to an interval."
+  },
+  {
+    topic: "Complex Numbers",
+    q: "Every nonzero complex z has n distinct n-th roots.",
+    options: ["True", "False"],
+    correct: 0,
+    points: 2.5,
+    explain: "By De Moivre's Theorem, a nonzero complex number has exactly n distinct n-th roots."
   },
   {
     topic: "Matrices",
-    q: "Matrix multiplication is commutative in general — that is, AB = BA for all matrices A, B where the product is defined.",
-    correct: false,
-    points: 1,
-    explain: "Matrix multiplication is not commutative in general; there exist matrices with AB ≠ BA."
+    q: "Scalar multiplication changes order.",
+    options: ["True", "False"],
+    correct: 1,
+    points: 2.5,
+    explain: "Multiplying a matrix by a scalar scales every entry but leaves the number of rows and columns unchanged."
   },
   {
     topic: "Matrices",
-    q: "Eigenvectors corresponding to distinct eigenvalues of a matrix are always linearly independent.",
-    correct: true,
-    points: 1,
-    explain: "This is a standard theorem: eigenvectors for distinct eigenvalues are always linearly independent."
+    q: "A and A^T share same eigenvalues.",
+    options: ["True", "False"],
+    correct: 0,
+    points: 2.5,
+    explain: "Since det(A − λI) = det((A − λI)^T) = det(A^T − λI), A and A^T have the same characteristic polynomial, hence the same eigenvalues."
   },
   {
-    topic: "Double Integrals",
-    q: "Fubini's Theorem guarantees that integrating with respect to x first is the only order that gives the correct value.",
-    correct: false,
-    points: 1,
-    explain: "Fubini's Theorem says either order gives the same value — neither order is uniquely required."
+    topic: "Matrices",
+    q: "Every square matrix has an inverse.",
+    options: ["True", "False"],
+    correct: 1,
+    points: 2.5,
+    explain: "Only square matrices with nonzero determinant (nonsingular) have an inverse."
+  },
+  {
+    topic: "Multivariable Integration",
+    q: "Continuous f on closed rectangle always integrable.",
+    options: ["True", "False"],
+    correct: 0,
+    points: 2.5,
+    explain: "A function continuous on a closed, bounded rectangle is Riemann integrable there."
+  },
+  {
+    topic: "Multivariable Integration",
+    q: "Limit value depends on sample point choice.",
+    options: ["True", "False"],
+    correct: 1,
+    points: 2.5,
+    explain: "When the double Riemann sum limit exists, it is independent of the choice of sample points."
+  },
+  {
+    topic: "Multivariable Integration",
+    q: "Subrectangle area is (b − a)(d − c).",
+    options: ["True", "False"],
+    correct: 0,
+    points: 2.5,
+    explain: "For a subrectangle with side lengths (b − a) and (d − c), its area is the product of those side lengths."
   }
 ];
+
+
+
 
 let current = 0;
 let started = false;
@@ -423,19 +678,25 @@ let student = { name: "", cls: "" };
 
 function renderIntro(){
   const app = document.getElementById('app');
+  const nameOptions = NAME_ROSTER.map((n, i) =>
+    `<option value="${n}">${i + 1}. ${n}</option>`
+  ).join('');
   app.innerHTML = `
     <div class="intro">
-      <p class="lead">Enter your name and class before starting the true/false review.</p>
+      <p class="lead">Select your name and enter your class before starting the exam.</p>
       <div class="field">
         <label for="nameInput">Name</label>
-        <input type="text" id="nameInput" placeholder="e.g. Alex Morgan" autocomplete="off">
+        <select id="nameInput">
+          <option value="" disabled selected>Select your name…</option>
+          ${nameOptions}
+        </select>
       </div>
       <div class="field">
         <label for="classInput">Class</label>
-        <input type="text" id="classInput" placeholder="e.g. Math 201 - Section B" autocomplete="off">
+        <input type="text" id="classInput" value="أولى حاسبات أهلية" disabled autocomplete="off">
       </div>
       <div class="field-error" id="introError"></div>
-      <button class="start-btn" id="startBtn">Start quiz →</button>
+      <button class="start-btn" id="startBtn">Start the exam →</button>
       <button class="tester-link" id="testerLink">Tester dashboard →</button>
     </div>
   `;
@@ -443,7 +704,7 @@ function renderIntro(){
     const nameVal = document.getElementById('nameInput').value.trim();
     const classVal = document.getElementById('classInput').value.trim();
     if(!nameVal || !classVal){
-      document.getElementById('introError').textContent = "Please fill in both name and class.";
+      document.getElementById('introError').textContent = "Please select a name and enter your class.";
       return;
     }
     student = { name: nameVal, cls: classVal };
@@ -502,7 +763,6 @@ function render(){
   const item = QUESTIONS[current];
   const pct = Math.round((current / QUESTIONS.length) * 100);
   const isLast = current === QUESTIONS.length - 1;
-  const sel = userAnswers[current];
 
   app.innerHTML = `
     <div class="student-tag">${student.name} · ${student.cls}</div>
@@ -512,18 +772,23 @@ function render(){
     </div>
     <div class="q-num">${item.topic}</div>
     <p class="question">${item.q}</p>
-    <div class="tf-options">
-      <button class="tf-btn ${sel === true ? 'selected' : ''}" id="trueBtn">True</button>
-      <button class="tf-btn ${sel === false ? 'selected' : ''}" id="falseBtn">False</button>
-    </div>
+    <div class="options" id="options"></div>
     <div class="nav-row">
       <button class="back-btn" id="backBtnQ" ${current === 0 ? 'disabled' : ''}>← Back</button>
-      <button class="next-btn" id="nextBtn">${isLast ? 'Submit →' : 'Next →'}</button>
+      <button class="next-btn visible" id="nextBtn">${isLast ? 'Submit →' : 'Next →'}</button>
     </div>
   `;
 
-  document.getElementById('trueBtn').onclick = () => selectAnswer(true);
-  document.getElementById('falseBtn').onclick = () => selectAnswer(false);
+  const optionsDiv = document.getElementById('options');
+  const letters = ['A','B','C','D'];
+  item.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option' + (userAnswers[current] === idx ? ' selected' : '');
+    btn.innerHTML = `<span class="letter">${letters[idx]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(idx);
+    optionsDiv.appendChild(btn);
+  });
+
   document.getElementById('backBtnQ').onclick = () => {
     if(current > 0){ current--; render(); }
   };
@@ -533,28 +798,31 @@ function render(){
   };
 }
 
-function selectAnswer(val){
-  // Students can click True/False any number of times and change their mind
-  // freely — the selection just updates which button is highlighted.
-  userAnswers[current] = val;
-  document.getElementById('trueBtn').classList.toggle('selected', val === true);
-  document.getElementById('falseBtn').classList.toggle('selected', val === false);
+function selectAnswer(idx){
+  // Students can click any option, any number of times, and change their
+  // mind freely — the selection just updates which option is highlighted.
+  userAnswers[current] = idx;
+  const optionButtons = document.querySelectorAll('.option');
+  optionButtons.forEach((btn, i) => {
+    btn.classList.toggle('selected', i === idx);
+  });
 }
 
 async function saveSubmission(finalScore, finalTotal){
   if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
-    console.error('APPS_SCRIPT_URL is not set.');
+    console.error('APPS_SCRIPT_URL is not set — see apps_script_backend.gs for setup.');
     return;
   }
   try{
     const record = {
-      sheet: QUIZ_SHEET_NAME,
       name: student.name,
       cls: student.cls,
       score: finalScore,
       total: finalTotal,
       timestamp: new Date().toISOString()
     };
+    // Sent as text/plain to avoid a CORS preflight request, which Apps Script
+    // web apps don't handle by default. The script still parses it as JSON.
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -567,14 +835,21 @@ async function saveSubmission(finalScore, finalTotal){
 
 async function fetchAllRecords(){
   if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
-    console.error('APPS_SCRIPT_URL is not set.');
+    console.error('APPS_SCRIPT_URL is not set — see apps_script_backend.gs for setup.');
     return [];
   }
   try{
-    const url = APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(QUIZ_SHEET_NAME);
-    const res = await fetch(url, { method: 'GET' });
+    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
     const records = await res.json();
-    records.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Sort by the student's position in the Name roster/dropdown (list order),
+    // not by submission time. Names not found in the roster sort to the end.
+    records.sort((a, b) => {
+      const ai = NAME_ROSTER.indexOf(a.name);
+      const bi = NAME_ROSTER.indexOf(b.name);
+      const aPos = ai === -1 ? NAME_ROSTER.length : ai;
+      const bPos = bi === -1 ? NAME_ROSTER.length : bi;
+      return aPos - bPos;
+    });
     return records;
   }catch(err){
     console.error('Could not fetch records:', err);
@@ -584,14 +859,14 @@ async function fetchAllRecords(){
 
 async function clearAllResults(){
   if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
-    console.error('APPS_SCRIPT_URL is not set.');
+    console.error('APPS_SCRIPT_URL is not set — see apps_script_backend.gs for setup.');
     return false;
   }
   try{
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'clear', code: TESTER_CODE, sheet: QUIZ_SHEET_NAME })
+      body: JSON.stringify({ action: 'clear', code: TESTER_CODE })
     });
     const data = await res.json();
     return data && data.status === 'ok';
@@ -623,7 +898,7 @@ function downloadCSV(records){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'true_false_results.csv';
+  a.download = 'true_false_exam_results.csv';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -685,7 +960,9 @@ async function renderDashboard(app){
 
   document.getElementById('exportBtn').onclick = () => downloadCSV(records);
   document.getElementById('clearBtn').onclick = async () => {
-    if(totalStudents === 0) return;
+    if(totalStudents === 0){
+      return;
+    }
     const confirmed = window.confirm(
       `This will permanently delete all ${totalStudents} saved result${totalStudents === 1 ? '' : 's'}. This cannot be undone. Continue?`
     );
@@ -730,7 +1007,7 @@ async function renderSummary(app){
       <div class="student-tag" style="text-align:center">${student.name} · ${student.cls}</div>
       <div class="q-num" style="text-align:center">Session complete</div>
       <h2>Score: ${score} / ${total} points</h2>
-      <p class="msg">${correctCount} of ${QUESTIONS.length} statements correct · ${msg}</p>
+      <p class="msg">${correctCount} of ${QUESTIONS.length} questions correct · ${msg}</p>
       <div class="roster-box" id="rosterBox">
         <div class="roster-title">Class roster</div>
         <div class="roster-count">Saving your result…</div>
@@ -762,6 +1039,7 @@ async function renderSummary(app){
       <div class="roster-sub">Result saved, but the count couldn't be loaded right now.</div>
     `;
   }
+
 }
 
 render();
