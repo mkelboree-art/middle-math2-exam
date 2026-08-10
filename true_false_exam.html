@@ -583,7 +583,11 @@ const NAME_ROSTER = [
 
 // Paste the Google Apps Script "Web app URL" here (ends in /exec).
 // See apps_script_backend.gs for setup instructions.
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOfGmS7q-drdCiArdemqnR6TLv5CkkpUnScH5Bo3h_1dAbCFdhzmF8hMobbnywmx4wIw/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydq8bIipZi36nLHL5zPK_CJNEprMjbkkRvFvo-kIYg_-slWC7s3WY_fpn3Fi8yGKOU9g/exec";
+
+// Identifies which spreadsheet tab this exam's results are saved to
+// (matches the `sheet` field/param your Apps Script backend expects).
+const SHEET_NAME = "TrueFalse Responses";
 
 const QUESTIONS = [
   {
@@ -815,6 +819,7 @@ async function saveSubmission(finalScore, finalTotal){
   }
   try{
     const record = {
+      sheet: SHEET_NAME,
       name: student.name,
       cls: student.cls,
       score: finalScore,
@@ -839,7 +844,7 @@ async function fetchAllRecords(){
     return [];
   }
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+    const res = await fetch(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME), { method: 'GET' });
     const records = await res.json();
     // Sort by the student's position in the Name roster/dropdown (list order),
     // not by submission time. Names not found in the roster sort to the end.
@@ -866,7 +871,7 @@ async function clearAllResults(){
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'clear', code: TESTER_CODE })
+      body: JSON.stringify({ action: 'clear', code: TESTER_CODE, sheet: SHEET_NAME })
     });
     const data = await res.json();
     return data && data.status === 'ok';
