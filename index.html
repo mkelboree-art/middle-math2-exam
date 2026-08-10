@@ -839,7 +839,14 @@ async function fetchAllRecords(){
     return [];
   }
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+    // A cache-busting timestamp is added because GET requests to the same
+    // Apps Script /exec URL can otherwise be served a stale cached response
+    // (by the browser or Google's infrastructure), even after new rows are
+    // added on the backend.
+    const res = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now(), {
+      method: 'GET',
+      cache: 'no-store'
+    });
     const records = await res.json();
     // Sort by the student's position in the Name roster/dropdown (list order),
     // not by submission time. Names not found in the roster sort to the end.
