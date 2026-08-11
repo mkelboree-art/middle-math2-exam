@@ -583,12 +583,7 @@ const NAME_ROSTER = [
 
 // Paste the Google Apps Script "Web app URL" here (ends in /exec).
 // See apps_script_backend.gs for setup instructions.
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydq8bIipZi36nLHL5zPK_CJNEprMjbkkRvFvo-kIYg_-slWC7s3WY_fpn3Fi8yGKOU9g/exec";
-
-// Identifies which spreadsheet tab this exam's results are saved to
-// (matches the `sheet` field/param your Apps Script backend expects,
-// and equals DEFAULT_SHEET_NAME so existing rows stay where they are).
-const SHEET_NAME = "Responses";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwOfGmS7q-drdCiArdemqnR6TLv5CkkpUnScH5Bo3h_1dAbCFdhzmF8hMobbnywmx4wIw/exec";
 
 const QUESTIONS = [
   {
@@ -681,8 +676,49 @@ let started = false;
 const userAnswers = new Array(QUESTIONS.length).fill(null);
 let student = { name: "", cls: "" };
 
+// Once a student submits, this browser is locked out of retaking the exam.
+// Keyed to this exam specifically so it doesn't collide with other quizzes
+// hosted the same way.
+const COMPLETION_KEY = 'examCompleted::middle-test-exam';
+
+function getLocalCompletion(){
+  try{
+    const raw = localStorage.getItem(COMPLETION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(err){
+    return null;
+  }
+}
+
+function setLocalCompletion(name, cls){
+  try{
+    localStorage.setItem(COMPLETION_KEY, JSON.stringify({ name, cls, ts: Date.now() }));
+  }catch(err){
+    // localStorage unavailable (e.g. private browsing) — the server-side
+    // name check on start still catches repeat attempts.
+  }
+}
+
+function renderLockedScreen(app, name, cls){
+  app.innerHTML = `
+    <div class="intro">
+      <p class="lead">You've already submitted this exam${name ? ` as <strong>${name}</strong>` : ''}${cls ? ` (${cls})` : ''}.</p>
+      <div class="field-error" style="display:block;">Retakes aren't allowed. If you think this is a mistake, contact your teacher.</div>
+      <button class="tester-link" id="lockedTesterLink">Tester dashboard →</button>
+    </div>
+  `;
+  document.getElementById('lockedTesterLink').onclick = () => {
+    renderCodeGate(app);
+  };
+}
+
 function renderIntro(){
   const app = document.getElementById('app');
+  const localCompletion = getLocalCompletion();
+  if(localCompletion){
+    renderLockedScreen(app, localCompletion.name, localCompletion.cls);
+    return;
+  }
   const nameOptions = NAME_ROSTER.map((n, i) =>
     `<option value="${n}">${i + 1}. ${n}</option>`
   ).join('');
@@ -705,13 +741,31 @@ function renderIntro(){
       <button class="tester-link" id="testerLink">Tester dashboard →</button>
     </div>
   `;
-  document.getElementById('startBtn').onclick = () => {
+  document.getElementById('startBtn').onclick = async () => {
     const nameVal = document.getElementById('nameInput').value.trim();
     const classVal = document.getElementById('classInput').value.trim();
     if(!nameVal || !classVal){
       document.getElementById('introError').textContent = "Please select a name and enter your class.";
       return;
     }
+    const startBtn = document.getElementById('startBtn');
+    startBtn.disabled = true;
+    startBtn.textContent = "Checking…";
+    document.getElementById('introError').textContent = "";
+
+    // Server-side check: block a repeat attempt under the same name even
+    // from a different browser/device (localStorage alone only protects
+    // this browser).
+    const records = await fetchAllRecords();
+    const alreadySubmitted = records.some(r =>
+      r.name && r.name.trim().toLowerCase() === nameVal.toLowerCase()
+    );
+    if(alreadySubmitted){
+      setLocalCompletion(nameVal, classVal);
+      renderLockedScreen(app, nameVal, classVal);
+      return;
+    }
+
     student = { name: nameVal, cls: classVal };
     started = true;
     render();
@@ -820,7 +874,6 @@ async function saveSubmission(finalScore, finalTotal){
   }
   try{
     const record = {
-      sheet: SHEET_NAME,
       name: student.name,
       cls: student.cls,
       score: finalScore,
@@ -845,7 +898,7 @@ async function fetchAllRecords(){
     return [];
   }
   try{
-    const res = await fetch(APPS_SCRIPT_URL + '?sheet=' + encodeURIComponent(SHEET_NAME), { method: 'GET' });
+    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
     const records = await res.json();
     // Sort by the student's position in the Name roster/dropdown (list order),
     // not by submission time. Names not found in the roster sort to the end.
@@ -872,7 +925,7 @@ async function clearAllResults(){
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'clear', code: TESTER_CODE, sheet: SHEET_NAME })
+      body: JSON.stringify({ action: 'clear', code: TESTER_CODE })
     });
     const data = await res.json();
     return data && data.status === 'ok';
@@ -929,6 +982,7 @@ async function renderDashboard(app){
       <div class="dash-actions">
         <button class="restart-btn" id="exportBtn">Export CSV</button>
         <button class="restart-btn" id="clearBtn" style="border-color:var(--chalk-pink); color:var(--chalk-pink);">Clear all results</button>
+        <button class="restart-btn" id="unlockDeviceBtn">Unlock this device</button>
         <button class="restart-btn" id="backBtn">Back to quiz</button>
       </div>
     </div>
@@ -985,6 +1039,10 @@ async function renderDashboard(app){
       alert('Could not clear results — check the connection and try again.');
     }
   };
+  document.getElementById('unlockDeviceBtn').onclick = () => {
+    localStorage.removeItem(COMPLETION_KEY);
+    alert('This device is unlocked — the next visit to the quiz will allow a new attempt.');
+  };
   document.getElementById('backBtn').onclick = () => {
     started = false;
     render();
@@ -1031,6 +1089,7 @@ async function renderSummary(app){
   });
 
   await saveSubmission(score, total);
+  setLocalCompletion(student.name, student.cls);
   const roster = await loadRoster();
   const rosterBox = document.getElementById('rosterBox');
   if(roster){
