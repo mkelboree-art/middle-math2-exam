@@ -247,6 +247,13 @@
     cursor:pointer;
   }
   .restart-btn:hover{ background:rgba(255,255,255,0.08); }
+  .retake-btn{
+    font-size:13px;
+    padding:5px 12px;
+    border-color:var(--chalk-teal, rgba(255,255,255,0.4));
+    white-space:nowrap;
+  }
+  .retake-btn:disabled{ opacity:0.5; cursor:default; }
 
   .intro p.lead{
     font-size:15px;
@@ -898,7 +905,15 @@ async function fetchAllRecords(){
     return [];
   }
   try{
-    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+    // A cache-busting timestamp is added because GET requests to the same
+    // Apps Script /exec URL can otherwise be served a stale cached response
+    // (by the browser or Google's infrastructure), even after new rows are
+    // added on the backend — which would let the same student slip past the
+    // "already submitted" check below.
+    const res = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now(), {
+      method: 'GET',
+      cache: 'no-store'
+    });
     const records = await res.json();
     // Sort by the student's position in the Name roster/dropdown (list order),
     // not by submission time. Names not found in the roster sort to the end.
@@ -931,6 +946,29 @@ async function clearAllResults(){
     return data && data.status === 'ok';
   }catch(err){
     console.error('Could not clear results:', err);
+    return false;
+  }
+}
+
+// Removes a single student's saved submission so that name is no longer
+// counted as "already submitted" and can take the exam again. Gated by
+// TESTER_CODE — only reachable from inside the tester dashboard, which
+// already requires the access code to open.
+async function removeStudentSubmission(name){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
+    console.error('APPS_SCRIPT_URL is not set — see apps_script_backend.gs for setup.');
+    return false;
+  }
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'removeStudent', code: TESTER_CODE, name })
+    });
+    const data = await res.json();
+    return data && data.status === 'ok';
+  }catch(err){
+    console.error('Could not remove submission:', err);
     return false;
   }
 }
@@ -1001,22 +1039,44 @@ async function renderDashboard(app){
     const rowsHtml = records.map(r => {
       const pct = r.total ? Math.round((r.score / r.total) * 100) : 0;
       const when = r.timestamp ? new Date(r.timestamp).toLocaleString() : '';
+      const safeName = String(r.name || '').replace(/"/g, '&quot;');
       return `<tr>
         <td>${r.name || ''}</td>
         <td>${r.cls || ''}</td>
         <td>${r.score}/${r.total} (${pct}%)</td>
         <td>${when}</td>
+        <td><button class="restart-btn retake-btn" data-name="${safeName}">Allow retake</button></td>
       </tr>`;
     }).join('');
     tableArea.innerHTML = `
       <div class="table-wrap">
         <table class="roster-table">
-          <thead><tr><th>Name</th><th>Class</th><th>Score</th><th>Submitted</th></tr></thead>
+          <thead><tr><th>Name</th><th>Class</th><th>Score</th><th>Submitted</th><th></th></tr></thead>
           <tbody>${rowsHtml}</tbody>
         </table>
       </div>
     `;
   }
+
+  tableArea.querySelectorAll('.retake-btn').forEach(btn => {
+    btn.onclick = async () => {
+      const name = btn.getAttribute('data-name');
+      const confirmed = window.confirm(
+        `Allow "${name}" to retake the exam? This deletes their saved result so they can submit again.`
+      );
+      if(!confirmed) return;
+      btn.disabled = true;
+      btn.textContent = 'Removing…';
+      const ok = await removeStudentSubmission(name);
+      if(ok){
+        renderDashboard(app);
+      }else{
+        btn.disabled = false;
+        btn.textContent = 'Allow retake';
+        alert('Could not remove this submission — check the connection and try again.');
+      }
+    };
+  });
 
   document.getElementById('exportBtn').onclick = () => downloadCSV(records);
   document.getElementById('clearBtn').onclick = async () => {
